@@ -163,14 +163,33 @@ with st.sidebar:
         ["Iris", "Wine", "Breast Cancer", "Upload CSV"]
     )
 
-    df = None
-    target_col = None
+    df, target_col = None, None
+
     if dataset_choice == "Upload CSV":
         uploaded = st.file_uploader("Upload a CSV file", type=["csv"])
-        if uploaded:
-            df = pd.read_csv(uploaded)
-            st.write(f"Loaded data shape: {df.shape}")
+        if uploaded is not None:
+            try:
+                df = pd.read_csv(uploaded, encoding="utf-8")
+            except UnicodeDecodeError:
+                # Fallback for non-UTF8 CSVs
+                df = pd.read_csv(uploaded, encoding="latin1")
+            except Exception as e:
+                st.error(f"❌ Failed to read CSV: {e}")
+                st.stop()
+
+            if df.empty or df.shape[1] == 0:
+                st.error("Uploaded file appears empty or has no valid columns.")
+                st.stop()
+
+            st.write(f"✅ Loaded data shape: {df.shape}")
+
             target_col = st.selectbox("Select target column", df.columns)
+
+            if target_col:
+                st.success(f"Target selected: {target_col}")
+        else:
+            st.info("Please upload a CSV file to continue.")
+            st.stop()
     else:
         uploaded = None
 
@@ -517,4 +536,5 @@ with tab_search:
         st.plotly_chart(
             plot_confusion_matrix(y, y_pred_best, labels=sorted(np.unique(y)), title="Best model CV confusion matrix"),
             use_container_width=True
+
         )
