@@ -1,7 +1,6 @@
 numpy
 pandas
-scikit-learn>=1.1
+scikit-learn==1.5.2
 scipy
 plotly
 streamlit==1.49.0
-
